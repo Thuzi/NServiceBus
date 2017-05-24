@@ -7,6 +7,7 @@ namespace NServiceBus
     using Autofac;
     using Autofac.Builder;
     using Autofac.Core;
+    using ObjectBuilder;
     using IContainer = ObjectBuilder.Common.IContainer;
 
     class AutofacObjectBuilder : IContainer
@@ -80,6 +81,26 @@ namespace NServiceBus
             var registrationBuilder = builder.Register(c => componentFactory.Invoke()).As(services).PropertiesAutowired();
 
             SetLifetimeScope(dependencyLifecycle, (IRegistrationBuilder<object, IConcreteActivatorData, SingleRegistrationStyle>) registrationBuilder);
+
+            builder.Update(container.ComponentRegistry);
+        }
+
+        public void Configure<T>(Func<IResolver, T> componentFactory, DependencyLifecycle dependencyLifecycle)
+        {
+            ThrowIfCalledOnChildContainer();
+
+            var registration = GetComponentRegistration(typeof(T));
+
+            if (registration != null)
+            {
+                return;
+            }
+
+            var builder = new ContainerBuilder();
+            var services = GetAllServices(typeof(T)).ToArray();
+            var registrationBuilder = builder.Register(c => componentFactory.Invoke(new AutofacResolver(c))).As(services).PropertiesAutowired();
+
+            SetLifetimeScope(dependencyLifecycle, (IRegistrationBuilder<object, IConcreteActivatorData, SingleRegistrationStyle>)registrationBuilder);
 
             builder.Update(container.ComponentRegistry);
         }
