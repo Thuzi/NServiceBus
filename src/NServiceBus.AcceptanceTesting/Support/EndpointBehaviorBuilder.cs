@@ -64,6 +64,13 @@
             return this;
         }
 
+        public EndpointBehaviorBuilder<TContext> AppDomain(Func<TContext, AppDomain> createAppDomain)
+        {
+            behavior.AppDomain = context => createAppDomain((TContext)context);
+
+            return this;
+        }
+
         public EndpointBehavior Build()
         {
             return behavior;

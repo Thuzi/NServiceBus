@@ -326,8 +326,8 @@ namespace NServiceBus.AcceptanceTesting.Support
                 {
                     throw new Exception(string.Format("Endpoint name '{0}' is larger than 77 characters and will cause issues with MSMQ queue names. Please rename your test class or endpoint!",endpointName));
                 }
-
-                var runner = PrepareRunner(endpointName, behaviorDescriptor.AppConfig, runDescriptor.UseSeparateAppdomains);
+                
+                var runner = PrepareRunner(endpointName, behaviorDescriptor.AppConfig, runDescriptor.UseSeparateAppdomains, behaviorDescriptor.AppDomain?.Invoke(runDescriptor.ScenarioContext));
                 var result = runner.Instance.Initialize(runDescriptor, behaviorDescriptor, routingTable, endpointName);
 
                 if (runDescriptor.UseSeparateAppdomains)
@@ -356,7 +356,7 @@ namespace NServiceBus.AcceptanceTesting.Support
             return Conventions.EndpointNamingConvention(endpointBehavior.EndpointBuilderType);
         }
 
-        static ActiveRunner PrepareRunner(string endpointName, string appConfigPath, bool useSeparateAppdomains)
+        static ActiveRunner PrepareRunner(string endpointName, string appConfigPath, bool useSeparateAppdomains, AppDomain appDomain)
         {
             if (!useSeparateAppdomains)
             {
@@ -366,14 +366,18 @@ namespace NServiceBus.AcceptanceTesting.Support
                     EndpointName = endpointName
                 };
             }
-            var domainSetup = new AppDomainSetup
-            {
-                ApplicationBase = AppDomain.CurrentDomain.SetupInformation.ApplicationBase,
-                LoaderOptimization = LoaderOptimization.SingleDomain,
-                ConfigurationFile = appConfigPath ?? AppDomain.CurrentDomain.SetupInformation.ConfigurationFile
-            };
 
-            var appDomain = AppDomain.CreateDomain(endpointName, AppDomain.CurrentDomain.Evidence, domainSetup);
+            if (appDomain == null)
+            {
+                var domainSetup = new AppDomainSetup
+                {
+                    ApplicationBase = AppDomain.CurrentDomain.SetupInformation.ApplicationBase,
+                    LoaderOptimization = LoaderOptimization.SingleDomain,
+                    ConfigurationFile = appConfigPath ?? AppDomain.CurrentDomain.SetupInformation.ConfigurationFile
+                };
+
+                appDomain = AppDomain.CreateDomain(endpointName, AppDomain.CurrentDomain.Evidence, domainSetup);
+            }
 
             return new ActiveRunner
             {

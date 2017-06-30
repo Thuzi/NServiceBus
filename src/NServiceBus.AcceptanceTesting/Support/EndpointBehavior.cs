@@ -20,6 +20,7 @@
         public List<IWhenDefinition> Whens { get; set; }
 
         public List<Action<BusConfiguration>> CustomConfig { get; set; }
+        public Func<ScenarioContext, AppDomain> AppDomain { get; set; }
         public string AppConfig { get; set; }
     }
 
